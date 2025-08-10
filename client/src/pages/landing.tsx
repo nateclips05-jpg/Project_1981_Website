@@ -1,9 +1,53 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { loginSchema, type LoginCredentials } from "@shared/schema";
 
 export default function Landing() {
-  const handleLogin = () => {
-    window.location.href = "/api/login";
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const form = useForm<LoginCredentials>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+    },
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: LoginCredentials) => {
+      await apiRequest("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify(credentials),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Logged in successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      window.location.reload(); // Reload to trigger auth state change
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid username or password",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: LoginCredentials) => {
+    loginMutation.mutate(data);
   };
 
   return (
@@ -41,24 +85,58 @@ export default function Landing() {
                   <i className="fas fa-gamepad text-white text-2xl"></i>
                 </div>
                 <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
-                <p className="text-gray-400">Sign in to your gaming account</p>
+                <p className="text-gray-400">Sign in with your Roblox credentials</p>
               </div>
 
-              <Button 
-                onClick={handleLogin}
-                className="w-full bg-gradient-to-r from-gaming-blue to-gaming-purple hover:from-gaming-purple hover:to-gaming-blue text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105 focus:ring-2 focus:ring-gaming-blue/50"
-              >
-                Sign In with Replit
-              </Button>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white">Roblox Username</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="text"
+                            placeholder="Enter your Roblox username"
+                            className="bg-dark-slate border-gray-600 text-white placeholder-gray-400 focus:border-gaming-blue"
+                          />
+                        </FormControl>
+                        <FormMessage className="text-red-400" />
+                      </FormItem>
+                    )}
+                  />
 
-              <div className="mt-8 text-center">
-                <p className="text-gray-400 text-sm">
-                  Don't have an account? 
-                  <a href="/api/login" className="text-gaming-blue hover:text-gaming-purple transition-colors font-medium ml-1">
-                    Create Account
-                  </a>
-                </p>
-              </div>
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white">Password</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="password"
+                            placeholder="Enter your password"
+                            className="bg-dark-slate border-gray-600 text-white placeholder-gray-400 focus:border-gaming-blue"
+                          />
+                        </FormControl>
+                        <FormMessage className="text-red-400" />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button 
+                    type="submit"
+                    disabled={loginMutation.isPending}
+                    className="w-full bg-gradient-to-r from-gaming-blue to-gaming-purple hover:from-gaming-purple hover:to-gaming-blue text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105 focus:ring-2 focus:ring-gaming-blue/50 disabled:opacity-50 disabled:transform-none"
+                  >
+                    {loginMutation.isPending ? "Signing In..." : "Sign In"}
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
           </Card>
 
@@ -69,7 +147,7 @@ export default function Landing() {
               <span className="text-gaming-green font-medium">Gaming Platform</span>
             </div>
             <div className="text-sm text-gray-300">
-              <p>Connect with your Replit account to access your gaming profile and track your progress.</p>
+              <p>Sign in with your Roblox credentials to access your gaming profile and track your progress.</p>
             </div>
           </div>
         </div>

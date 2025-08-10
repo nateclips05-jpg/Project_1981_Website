@@ -3,11 +3,12 @@ import {
   games,
   userGameSessions,
   type User,
-  type UpsertUser,
+  type InsertUser,
   type Game,
   type UserGameSession,
   type InsertGame,
   type InsertUserGameSession,
+  type LoginCredentials,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -15,9 +16,10 @@ import { eq, desc, and } from "drizzle-orm";
 // Interface for storage operations
 export interface IStorage {
   // User operations
-  // (IMPORTANT) these user operations are mandatory for Replit Auth.
   getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  authenticateUser(credentials: LoginCredentials): Promise<User | null>;
   
   // Game operations
   getGames(): Promise<Game[]>;
@@ -31,30 +33,27 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   // User operations
-  // (IMPORTANT) these user operations are mandatory for Replit Auth.
-
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values({
-        ...userData,
-        username: userData.username || userData.email?.split('@')[0] || 'player',
-        displayName: userData.displayName || userData.firstName || userData.username || 'New Player',
-      })
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(userData).returning();
+    return user;
+  }
+
+  async authenticateUser(credentials: LoginCredentials): Promise<User | null> {
+    const user = await this.getUserByUsername(credentials.username);
+    if (user && user.password === credentials.password) {
+      return user;
+    }
+    return null;
   }
 
   // Game operations
@@ -69,7 +68,7 @@ export class DatabaseStorage implements IStorage {
 
   // User game session operations
   async getUserGameSessions(userId: string): Promise<(UserGameSession & { game: Game })[]> {
-    return await db
+    const results = await db
       .select({
         id: userGameSessions.id,
         userId: userGameSessions.userId,
@@ -84,6 +83,8 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userGameSessions.userId, userId))
       .orderBy(desc(userGameSessions.lastPlayed))
       .limit(10);
+    
+    return results.filter(result => result.game !== null) as (UserGameSession & { game: Game })[];
   }
 
   async createUserGameSession(sessionData: InsertUserGameSession): Promise<UserGameSession> {

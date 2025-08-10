@@ -11,8 +11,7 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Session storage table.
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+// Session storage table for custom auth
 export const sessions = pgTable(
   "sessions",
   {
@@ -23,16 +22,14 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table.
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+// Roblox players table - connects to your existing player database
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
+  robloxUserId: varchar("roblox_user_id").unique(), // Roblox user ID
+  username: varchar("username").unique().notNull(), // Roblox username
+  displayName: varchar("display_name").notNull(),
+  password: varchar("password").notNull(), // For authentication
   profileImageUrl: varchar("profile_image_url"),
-  username: varchar("username").unique(),
-  displayName: varchar("display_name"),
   level: integer("level").default(1),
   xp: integer("xp").default(0),
   rank: varchar("rank").default('Bronze I'),
@@ -65,17 +62,22 @@ export const userGameSessions = pgTable("user_game_sessions", {
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
-  email: true,
-  firstName: true,
-  lastName: true,
-  profileImageUrl: true,
+  robloxUserId: true,
   username: true,
   displayName: true,
+  password: true,
+  profileImageUrl: true,
 });
 
-export type UpsertUser = typeof users.$inferInsert;
+export const loginSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export type InsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type Game = typeof games.$inferSelect;
 export type UserGameSession = typeof userGameSessions.$inferSelect;
 export type InsertGame = typeof games.$inferInsert;
 export type InsertUserGameSession = typeof userGameSessions.$inferInsert;
+export type LoginCredentials = z.infer<typeof loginSchema>;
