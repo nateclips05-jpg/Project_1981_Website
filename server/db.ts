@@ -1,17 +1,20 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-neonConfig.webSocketConstructor = ws;
-
-const databaseUrl = process.env.RAILWAY_DATABASE_URL || process.env.DATABASE_URL;
+// Force use of Railway database
+const databaseUrl = process.env.RAILWAY_DATABASE_URL;
 
 if (!databaseUrl) {
   throw new Error(
-    "RAILWAY_DATABASE_URL or DATABASE_URL must be set. Did you forget to provision a database?",
+    "RAILWAY_DATABASE_URL must be set. Make sure you've added your Railway database connection string to secrets.",
   );
 }
 
-export const pool = new Pool({ connectionString: databaseUrl });
-export const db = drizzle({ client: pool, schema });
+console.log("Using Railway database connection...");
+
+export const pool = new Pool({ 
+  connectionString: databaseUrl,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+export const db = drizzle(pool, { schema });

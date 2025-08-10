@@ -34,10 +34,7 @@ export default function SignIn() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
-      await apiRequest("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify(credentials),
-      });
+      await apiRequest("/api/auth/login", "POST", credentials);
     },
     onSuccess: () => {
       toast({
@@ -173,8 +170,7 @@ export default function SignIn() {
               <span className="text-gaming-green font-medium">Demo Accounts</span>
             </div>
             <div className="text-sm text-gray-300 space-y-1">
-              <p><strong>Username:</strong> robloxplayer1 | <strong>Password:</strong> password123</p>
-              <p><strong>Username:</strong> gamermaster | <strong>Password:</strong> password456</p>
+              <p><strong>Username:</strong> testuser | <strong>Password:</strong> 12345</p>
             </div>
           </div>
 

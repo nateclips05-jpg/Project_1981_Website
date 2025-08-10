@@ -10,8 +10,8 @@ import {
   type InsertUserGameSession,
   type LoginCredentials,
 } from "@shared/schema";
-import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { db, pool } from "./db";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -49,11 +49,40 @@ export class DatabaseStorage implements IStorage {
   }
 
   async authenticateUser(credentials: LoginCredentials): Promise<User | null> {
-    const user = await this.getUserByUsername(credentials.username);
-    if (user && user.password === credentials.password) {
-      return user;
+    try {
+      // Query Railway database 'players' table
+      const result = await pool.query(
+        'SELECT id, username, password_hash as password FROM players WHERE username = $1 AND password_hash = $2 LIMIT 1',
+        [credentials.username, credentials.password]
+      );
+      
+      if (result.rows.length > 0) {
+        const player = result.rows[0];
+        // Convert Railway player data to our User type
+        return {
+          id: player.id.toString(),
+          robloxUserId: player.id.toString(),
+          username: player.username,
+          displayName: player.username,
+          password: player.password,
+          profileImageUrl: null,
+          level: 1,
+          xp: 0,
+          rank: 'Bronze I',
+          title: 'New Player',
+          gamesPlayed: 0,
+          hoursPlayed: 0,
+          friendsCount: 0,
+          achievements: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as User;
+      }
+      return null;
+    } catch (error) {
+      console.error("Authentication error:", error);
+      return null;
     }
-    return null;
   }
 
   // Game operations

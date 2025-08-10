@@ -11,8 +11,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post('/api/auth/login', async (req, res) => {
     try {
+      console.log("Login attempt:", req.body);
       const credentials = loginSchema.parse(req.body);
+      console.log("Parsed credentials:", credentials);
+      
       const user = await loginUser(credentials);
+      console.log("Login result:", user ? "User found" : "User not found");
       
       if (!user) {
         return res.status(401).json({ message: "Invalid username or password" });
@@ -22,7 +26,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Login successful", user });
     } catch (error) {
       console.error("Login error:", error);
-      res.status(400).json({ message: "Invalid credentials format" });
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: "Invalid credentials format" });
+      }
     }
   });
 
