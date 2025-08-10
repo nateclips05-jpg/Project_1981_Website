@@ -34,7 +34,7 @@ export default function SignIn() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
-      await apiRequest("/api/auth/login", "POST", credentials);
+      await apiRequest("POST", "/api/auth/login", credentials);
     },
     onSuccess: () => {
       toast({
