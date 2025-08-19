@@ -59,28 +59,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get user's recent games
-  app.get('/api/user/games', requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const sessions = await storage.getUserGameSessions(userId);
-      res.json(sessions);
-    } catch (error) {
-      console.error("Error fetching user games:", error);
-      res.status(500).json({ message: "Failed to fetch user games" });
-    }
-  });
+  // // Get user's recent games
+  // app.get('/api/user/games', requireAuth, async (req, res) => {
+  //   try {
+  //     const userId = req.session.userId!;
+  //     const sessions = await storage.getUserGameSessions(userId);
+  //     res.json(sessions);
+  //   } catch (error) {
+  //     console.error("Error fetching user games:", error);
+  //     res.status(500).json({ message: "Failed to fetch user games" });
+  //   }
+  // });
 
-  // Get all available games
-  app.get('/api/games', async (req, res) => {
-    try {
-      const games = await storage.getGames();
-      res.json(games);
-    } catch (error) {
-      console.error("Error fetching games:", error);
-      res.status(500).json({ message: "Failed to fetch games" });
-    }
-  });
+  // // Get all available games
+  // app.get('/api/games', async (req, res) => {
+  //   try {
+  //     const games = await storage.getGames();
+  //     res.json(games);
+  //   } catch (error) {
+  //     console.error("Error fetching games:", error);
+  //     res.status(500).json({ message: "Failed to fetch games" });
+  //   }
+  // });
 
   const httpServer = createServer(app);
   return httpServer;

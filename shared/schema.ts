@@ -27,19 +27,20 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   robloxUserId: varchar("roblox_user_id").unique(), // Roblox user ID
   username: varchar("username").unique().notNull(), // Roblox username
-  displayName: varchar("display_name").notNull(),
-  password: varchar("password").notNull(), // For authentication
-  profileImageUrl: varchar("profile_image_url"),
-  level: integer("level").default(1),
-  xp: integer("xp").default(0),
-  rank: varchar("rank").default('Bronze I'),
-  title: varchar("title").default('New Player'),
-  gamesPlayed: integer("games_played").default(0),
-  hoursPlayed: integer("hours_played").default(0),
-  friendsCount: integer("friends_count").default(0),
-  achievements: integer("achievements").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  password: varchar("password_hash").notNull() // For authentication
+
+  // displayName: varchar("display_name").notNull(),
+  // profileImageUrl: varchar("profile_image_url"),
+  // level: integer("level").default(1),
+  // xp: integer("xp").default(0),
+  // rank: varchar("rank").default('Bronze I'),
+  // title: varchar("title").default('New Player'),
+  // gamesPlayed: integer("games_played").default(0),
+  // hoursPlayed: integer("hours_played").default(0),
+  // friendsCount: integer("friends_count").default(0),
+  // achievements: integer("achievements").default(0),
+  // createdAt: timestamp("created_at").defaultNow(),
+  // updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Game records table
